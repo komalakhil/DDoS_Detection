@@ -1,9 +1,13 @@
-import React,{useState} from 'react'
+import React,{useState,useRef } from 'react'
 import { Button } from "keep-react";
 import { Table } from "keep-react";
 import Papa from 'papaparse'; // Using PapaParse library for parsing CSV
 import axios from 'axios';
+import { AiOutlineLoading } from "react-icons/ai";
+import { ImSpinner9 } from "react-icons/im";
+import { FaSpinner } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
+
 
 
 export default function Home() {
@@ -12,12 +16,20 @@ export default function Home() {
     const [csvHeaders, setCsvHeaders] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
     const [rows,setRows] = useState(0)
+    const [loading,setLoading] = useState(false);
     const navigate = useNavigate();
+    const tableRef = useRef(null);
 
     const handleFileChange = (event) => {
         const file = event.target.files[0];
         setSelectedFile(file);
         parseCSV(file);
+        if (tableRef.current) {                                                                                                   
+          tableRef.current.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+          });
+      }
     };
   
         const parseCSV = (file) => {
@@ -37,6 +49,7 @@ export default function Home() {
           };
 
     const handleFileUpload = () => {
+        setLoading(true);
         if (selectedFile) {
             const formData = new FormData();
             formData.append('file', selectedFile);
@@ -44,6 +57,7 @@ export default function Home() {
             axios.post("http://localhost:5000/upload_file", formData)
               .then(response => {
                 console.log('File uploaded successfully:', response.data);
+                setLoading(false);
                 navigate('/result');
                 // Handle response from backend if needed
               })
@@ -61,10 +75,10 @@ export default function Home() {
         {csvHeaders.length > 0 && csvData.length > 0 && (
         <div>
             <div className='flex justify-end px-2'>
-            <Button size="md" type="primary" onClick={handleFileUpload}>Process</Button>
-
+              {loading ? (<div><FaSpinner /></div>) : ( <button className='bg-[#07244b] text-white rounded' onClick={handleFileUpload}><div className='m-3'>Process</div></button>)}
+           
           </div>
-          <div className='max-h-screen overflow-y-auto'> {/* Set max height and overflow */}
+          <div className='max-h-screen overflow-y-auto' ref={tableRef}> {/* Set max height and overflow */}
             <Table className='table-auto w-full'>               
                  <Table.Caption className='text-left px-2 text-2xl font-semibold'>
                     CSV File Uploaded
